@@ -8,6 +8,15 @@ use gotham::router::Router;
 use gotham::state::State;
 use hyper::{Response, StatusCode};
 
+fn index(state: State) -> (State, Response) {
+    let res = create_response(
+        &state,
+        StatusCode::Ok,
+        Some((String::from("Index").into_bytes(), mime::TEXT_PLAIN)),
+    );
+    (state, res)
+}
+
 fn get_appointments(state: State) -> (State, Response) {
     let res = create_response(
         &state,
@@ -22,7 +31,10 @@ fn get_appointments(state: State) -> (State, Response) {
 
 fn router() -> Router {
     build_simple_router(|route| {
-        route.get("/appointments").to(get_appointments);
+        route.get("/").to(index);
+        route.scope("/api", |route| {
+            route.get("/appointments").to(get_appointments);
+        })
     })
 }
 
