@@ -1,4 +1,6 @@
 extern crate gotham;
+#[macro_use]
+extern crate gotham_derive;
 extern crate hyper;
 extern crate mime;
 extern crate serde;
@@ -10,7 +12,7 @@ use gotham::handler::IntoResponse;
 use gotham::http::response::create_response;
 use gotham::router::builder::*;
 use gotham::router::Router;
-use gotham::state::State;
+use gotham::state::{FromState, State};
 use hyper::{Response, StatusCode};
 
 #[derive(Serialize)]
@@ -35,6 +37,11 @@ impl IntoResponse for Appointment {
     }
 }
 
+#[derive(Deserialize, StateData, StaticResponseExtender)]
+struct PathExtractor {
+    id: u8
+}
+
 fn index(state: State) -> (State, Response) {
     let res = create_response(
         &state,
@@ -45,10 +52,22 @@ fn index(state: State) -> (State, Response) {
 }
 
 fn get_appointment(state: State) -> (State, Appointment) {
-    let appointment = Appointment {
-        date: "now".to_string(),
-        patient: "Jon".to_string(),
-        doctor: "Mac".to_string(),
+    let appointment = {
+        let path_id = PathExtractor::borrow_from(&state);
+        
+       if path_id.id == 1 {
+            Appointment {
+                date: "now".to_string(),
+                patient: "Jon".to_string(),
+                doctor: "Mac".to_string(),
+            }
+        }else {
+            Appointment {
+                date: "never".to_string(),
+                patient: "NoOne".to_string(),
+                doctor: "NoOne".to_string(),
+            }
+        }
     };
     (state, appointment)
 }
@@ -70,7 +89,10 @@ fn router() -> Router {
         route.get("/").to(index);
         route.scope("/api", |route| {
             route.get("/appointments").to(get_appointments);
-            route.get("/appointments/1").to(get_appointment);
+            route
+                .get("/appointments/:id")
+                .with_path_extractor::<PathExtractor>()
+                .to(get_appointment);
         })
     })
 }
