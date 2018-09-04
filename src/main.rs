@@ -39,7 +39,7 @@ impl IntoResponse for Appointment {
 
 #[derive(Deserialize, StateData, StaticResponseExtender)]
 struct PathExtractor {
-    id: u8
+    id: u8,
 }
 
 fn index(state: State) -> (State, Response) {
@@ -54,14 +54,14 @@ fn index(state: State) -> (State, Response) {
 fn get_appointment(state: State) -> (State, Appointment) {
     let appointment = {
         let path_id = PathExtractor::borrow_from(&state);
-        
-       if path_id.id == 1 {
+
+        if path_id.id == 1 {
             Appointment {
                 date: "now".to_string(),
                 patient: "Jon".to_string(),
                 doctor: "Mac".to_string(),
             }
-        }else {
+        } else {
             Appointment {
                 date: "never".to_string(),
                 patient: "NoOne".to_string(),
